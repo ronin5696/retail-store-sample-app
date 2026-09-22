@@ -1,18 +1,35 @@
-name: Docker Image CI
+name: Build Docker Images
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main", "production"]
   pull_request:
-    branches: [ "main" ]
+    branches: ["main", "production"]
+
+permissions:
+  contents: read
 
 jobs:
-
   build:
-
     runs-on: ubuntu-latest
 
+    strategy:
+      fail-fast: false
+      matrix:
+        service:
+          - ui
+          - catalog
+          - cart
+          - orders
+          - checkout
+
     steps:
-    - uses: actions/checkout@v4
-    - name: Build the Docker image
-      run: docker build . --file Dockerfile --tag my-image-name:$(date +%s)
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Build ${{ matrix.service }} image
+        run: |
+          docker build \
+            --file src/${{ matrix.service }}/Dockerfile \
+            --tag retail-store-${{ matrix.service }}:${{ github.sha }} \
+            src/${{ matrix.service }}
